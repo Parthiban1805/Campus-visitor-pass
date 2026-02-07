@@ -1,0 +1,46 @@
+{
+    "expo": {
+        "name": "Campus Security",
+        "slug": "campus-security-app",
+        "version": "1.0.0",
+        "orientation": "portrait",
+        "icon": "./assets/icon.png",
+        "userInterfaceStyle": "light",
+        "splash": {
+            "image": "./assets/splash.png",
+            "resizeMode": "contain",
+            "backgroundColor": "#388E3C"
+        },
+        "assetBundlePatterns": [
+            "**/*"
+        ],
+        "ios": {
+            "supportsTablet": true,
+            "bundleIdentifier": "com.campus.security",
+            "infoPlist": {
+                "NSCameraUsageDescription": "This app requires camera access to scan visitor QR codes"
+            }
+        },
+        "android": {
+            "adaptiveIcon": {
+                "foregroundImage": "./assets/adaptive-icon.png",
+                "backgroundColor": "#388E3C"
+            },
+            "package": "com.campus.security",
+            "permissions": [
+                "android.permission.CAMERA"
+            ]
+        },
+        "web": {
+            "favicon": "./assets/favicon.png"
+        },
+        "plugins": [
+            [
+                "expo-camera",
+                {
+                    "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan QR codes"
+                }
+            ]
+        ]
+    }
+}

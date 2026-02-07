@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+.expo/
+dist/
+
+# Environment
+.env
+
+# OS
+.DS_Store
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+
+# Debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.vscode/
+.idea/
+
+# Expo
+.expo-shared/
+web-build/

@@ -1,0 +1,32 @@
+{
+    "expo": {
+        "name": "Campus Admin",
+        "slug": "campus-admin-app",
+        "version": "1.0.0",
+        "orientation": "portrait",
+        "icon": "./assets/icon.png",
+        "userInterfaceStyle": "light",
+        "splash": {
+            "image": "./assets/splash.png",
+            "resizeMode": "contain",
+            "backgroundColor": "#1976D2"
+        },
+        "assetBundlePatterns": [
+            "**/*"
+        ],
+        "ios": {
+            "supportsTablet": true,
+            "bundleIdentifier": "com.campus.admin"
+        },
+        "android": {
+            "adaptiveIcon": {
+                "foregroundImage": "./assets/adaptive-icon.png",
+                "backgroundColor": "#1976D2"
+            },
+            "package": "com.campus.admin"
+        },
+        "web": {
+            "favicon": "./assets/favicon.png"
+        }
+    }
+}
