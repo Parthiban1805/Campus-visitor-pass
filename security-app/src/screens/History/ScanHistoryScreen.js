@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import api, { endpoints } from '../../api/axiosConfig';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../../styles/theme';
 
@@ -56,10 +58,11 @@ const ScanHistoryScreen = ({ navigation }) => {
     );
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['top']}>
+            <StatusBar style="dark" />
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+                    <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Scan History</Text>
                 <View style={{ width: 40 }} />
@@ -86,7 +89,7 @@ const ScanHistoryScreen = ({ navigation }) => {
                     )}
                 />
             )}
-        </View>
+        </SafeAreaView>
     );
 };
 
@@ -99,19 +102,20 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: 60,
-        paddingBottom: SPACING.md,
+        paddingVertical: SPACING.md,
         paddingHorizontal: SPACING.lg,
-        backgroundColor: COLORS.primary,
-        ...SHADOWS.small,
+        backgroundColor: COLORS.surface,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
     },
     backButton: {
-        padding: SPACING.sm,
+        padding: SPACING.xs,
+        marginLeft: -SPACING.xs,
     },
     headerTitle: {
         fontSize: FONTS.h4,
-        fontWeight: '600',
-        color: COLORS.white,
+        fontWeight: FONTS.weight.bold,
+        color: COLORS.textPrimary,
     },
     listContent: {
         padding: SPACING.md,

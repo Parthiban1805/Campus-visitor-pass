@@ -12,12 +12,13 @@ import {
     ActivityIndicator,
     Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import StatusBadge from '../../components/StatusBadge';
 import CustomButton from '../../components/CustomButton';
 import InputModal from '../../components/InputModal';
 import api, { endpoints } from '../../api/axiosConfig';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../../styles/theme';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS, ICON_SIZES } from '../../styles/theme';
 
 const STATUS_TABS = ['all', 'pending', 'approved', 'rejected'];
 
@@ -64,8 +65,6 @@ const RequestsListScreen = ({ navigation }) => {
         isDestructive: false,
         onSubmit: () => { },
     });
-
-    // ... existing onRefresh ...
 
     const handleApprovePress = (requestId) => {
         setModalConfig({
@@ -121,11 +120,15 @@ const RequestsListScreen = ({ navigation }) => {
     };
 
     const renderRequestCard = ({ item }) => (
-        <View style={[styles.requestCard, SHADOWS.small]}>
+        <View style={[styles.requestCard, SHADOWS.card]}>
             <View style={styles.cardHeader}>
-                <StatusBadge status={item.status} />
+                <StatusBadge status={item.status} size="small" />
                 <Text style={styles.dateText}>
-                    {new Date(item.visitDate).toLocaleDateString()}
+                    {new Date(item.visitDate).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                    })}
                 </Text>
             </View>
 
@@ -134,14 +137,16 @@ const RequestsListScreen = ({ navigation }) => {
                 {item.purpose}
             </Text>
 
-            <View style={styles.detailRow}>
-                <Ionicons name="business-outline" size={14} color={COLORS.textSecondary} />
-                <Text style={styles.detailText}>{item.department}</Text>
-            </View>
+            <View style={styles.detailsContainer}>
+                <View style={styles.detailRow}>
+                    <Ionicons name="business" size={ICON_SIZES.xs} color={COLORS.textSecondary} />
+                    <Text style={styles.detailText}>{item.department}</Text>
+                </View>
 
-            <View style={styles.detailRow}>
-                <Ionicons name="time-outline" size={14} color={COLORS.textSecondary} />
-                <Text style={styles.detailText}>{item.timeSlot}</Text>
+                <View style={styles.detailRow}>
+                    <Ionicons name="time" size={ICON_SIZES.xs} color={COLORS.textSecondary} />
+                    <Text style={styles.detailText}>{item.timeSlot}</Text>
+                </View>
             </View>
 
             {item.status === 'pending' && (
@@ -149,8 +154,9 @@ const RequestsListScreen = ({ navigation }) => {
                     <TouchableOpacity
                         style={[styles.actionBtn, styles.approveBtn]}
                         onPress={() => handleApprovePress(item._id)}
+                        activeOpacity={0.7}
                     >
-                        <Ionicons name="checkmark-circle-outline" size={20} color={COLORS.success} />
+                        <Ionicons name="checkmark-circle" size={ICON_SIZES.sm} color={COLORS.success} />
                         <Text style={[styles.actionText, { color: COLORS.success }]}>
                             Approve
                         </Text>
@@ -159,8 +165,9 @@ const RequestsListScreen = ({ navigation }) => {
                     <TouchableOpacity
                         style={[styles.actionBtn, styles.rejectBtn]}
                         onPress={() => handleRejectPress(item._id)}
+                        activeOpacity={0.7}
                     >
-                        <Ionicons name="close-circle-outline" size={20} color={COLORS.error} />
+                        <Ionicons name="close-circle" size={ICON_SIZES.sm} color={COLORS.error} />
                         <Text style={[styles.actionText, { color: COLORS.error }]}>Reject</Text>
                     </TouchableOpacity>
                 </View>
@@ -169,41 +176,55 @@ const RequestsListScreen = ({ navigation }) => {
             <TouchableOpacity
                 style={styles.viewDetailsBtn}
                 onPress={() => navigation.navigate('RequestDetail', { request: item })}
+                activeOpacity={0.7}
             >
                 <Text style={styles.viewDetailsText}>View Details</Text>
-                <Ionicons name="arrow-forward" size={16} color={COLORS.primary} />
+                <Ionicons name="arrow-forward" size={ICON_SIZES.xs} color={COLORS.primary} />
             </TouchableOpacity>
         </View>
     );
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['top']}>
+            {/* Header */}
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Visitor Requests</Text>
+                {navigation.canGoBack() && (
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                        <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
+                    </TouchableOpacity>
+                )}
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.headerTitle}>Visitor Requests</Text>
+                    <Text style={styles.headerSubtitle}>Review and manage visitor applications</Text>
+                </View>
             </View>
 
+            {/* Filter Tabs */}
             <View style={styles.tabsContainer}>
-                {STATUS_TABS.map((tab) => (
-                    <TouchableOpacity
-                        key={tab}
-                        style={[styles.tab, activeTab === tab && styles.activeTab]}
-                        onPress={() => {
-                            setActiveTab(tab);
-                            setLoading(true);
-                        }}
-                    >
-                        <Text
-                            style={[styles.tabText, activeTab === tab && styles.activeTabText]}
+                <View style={styles.tabsWrapper}>
+                    {STATUS_TABS.map((tab) => (
+                        <TouchableOpacity
+                            key={tab}
+                            style={[styles.tab, activeTab === tab && styles.activeTab]}
+                            onPress={() => {
+                                setActiveTab(tab);
+                                setLoading(true);
+                            }}
+                            activeOpacity={0.7}
                         >
-                            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
+                            <Text
+                                style={[styles.tabText, activeTab === tab && styles.activeTabText]}
+                            >
+                                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
             </View>
 
             {loading ? (
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#1976D2" />
+                    <ActivityIndicator size="large" color={COLORS.primary} />
                 </View>
             ) : (
                 <FlatList
@@ -212,12 +233,24 @@ const RequestsListScreen = ({ navigation }) => {
                     keyExtractor={(item) => item._id}
                     contentContainerStyle={styles.listContent}
                     refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            tintColor={COLORS.primary}
+                            colors={[COLORS.primary]}
+                        />
                     }
                     ListEmptyComponent={() => (
                         <View style={styles.emptyState}>
-                            <Ionicons name="document-outline" size={80} color={COLORS.textHint} />
-                            <Text style={styles.emptyText}>No {activeTab} requests</Text>
+                            <View style={styles.emptyIconContainer}>
+                                <Ionicons name="document-text-outline" size={64} color={COLORS.textTertiary} />
+                            </View>
+                            <Text style={styles.emptyTitle}>No {activeTab} requests</Text>
+                            <Text style={styles.emptySubtitle}>
+                                {activeTab === 'pending'
+                                    ? 'All caught up! No pending requests at the moment.'
+                                    : `There are no ${activeTab} requests to display.`}
+                            </Text>
                         </View>
                     )}
                 />
@@ -228,7 +261,7 @@ const RequestsListScreen = ({ navigation }) => {
                 onClose={() => setModalVisible(false)}
                 {...modalConfig}
             />
-        </View>
+        </SafeAreaView>
     );
 };
 
@@ -237,138 +270,201 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: COLORS.background,
     },
+
+    // Header
     header: {
-        paddingTop: 60,
-        paddingBottom: SPACING.md,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingTop: SPACING.md,
+        paddingBottom: SPACING.md + 4,
         paddingHorizontal: SPACING.lg,
-        backgroundColor: COLORS.white,
-        ...SHADOWS.small,
+        backgroundColor: COLORS.surface,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+    },
+    backButton: {
+        padding: SPACING.xs,
+        marginRight: SPACING.md,
+        marginLeft: -SPACING.xs,
     },
     headerTitle: {
         fontSize: FONTS.h3,
-        fontWeight: '700',
+        fontWeight: FONTS.weight.bold,
         color: COLORS.textPrimary,
+        marginBottom: SPACING.xs - 2,
+        letterSpacing: -0.3,
     },
+    headerSubtitle: {
+        fontSize: FONTS.caption,
+        color: COLORS.textSecondary,
+    },
+
+    // Tabs
     tabsContainer: {
-        flexDirection: 'row',
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.surface,
         paddingHorizontal: SPACING.lg,
-        paddingVertical: SPACING.sm,
-        ...SHADOWS.small,
+        paddingVertical: SPACING.md,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+    },
+    tabsWrapper: {
+        flexDirection: 'row',
+        backgroundColor: COLORS.surfaceVariant,
+        borderRadius: BORDER_RADIUS.pill,
+        padding: SPACING.xs,
     },
     tab: {
         flex: 1,
         paddingVertical: SPACING.sm,
         alignItems: 'center',
-        borderRadius: BORDER_RADIUS.md,
-        marginHorizontal: SPACING.xs,
+        justifyContent: 'center',
+        borderRadius: BORDER_RADIUS.pill,
     },
     activeTab: {
-        backgroundColor: '#1976D2',
+        backgroundColor: COLORS.surface,
+        ...SHADOWS.xs,
     },
     tabText: {
         fontSize: FONTS.caption,
-        fontWeight: '600',
+        fontWeight: FONTS.weight.medium,
         color: COLORS.textSecondary,
+        letterSpacing: 0.3,
     },
     activeTabText: {
-        color: COLORS.white,
+        color: COLORS.primary,
+        fontWeight: FONTS.weight.semibold,
     },
+
+    // Loading
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
     },
+
+    // List
     listContent: {
         padding: SPACING.lg,
         flexGrow: 1,
     },
+
+    // Request Card
     requestCard: {
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.surface,
         borderRadius: BORDER_RADIUS.lg,
-        padding: SPACING.md,
+        padding: SPACING.md + 4,
         marginBottom: SPACING.md,
+        borderWidth: 1,
+        borderColor: COLORS.border,
     },
     cardHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: SPACING.sm,
+        marginBottom: SPACING.md,
     },
     dateText: {
-        fontSize: FONTS.caption,
+        fontSize: FONTS.small,
         color: COLORS.textSecondary,
+        fontWeight: FONTS.weight.medium,
     },
     visitorName: {
-        fontSize: FONTS.h6,
-        fontWeight: '700',
+        fontSize: FONTS.h5,
+        fontWeight: FONTS.weight.bold,
         color: COLORS.textPrimary,
+        marginBottom: SPACING.xs,
+        letterSpacing: -0.2,
     },
     purposeText: {
         fontSize: FONTS.caption,
         color: COLORS.textSecondary,
-        marginTop: SPACING.xs,
-        marginBottom: SPACING.sm,
+        lineHeight: FONTS.caption * 1.5,
+        marginBottom: SPACING.md,
+    },
+    detailsContainer: {
+        gap: SPACING.xs,
     },
     detailRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: SPACING.xs,
+        gap: SPACING.xs,
     },
     detailText: {
-        fontSize: FONTS.small,
+        fontSize: FONTS.caption,
         color: COLORS.textSecondary,
-        marginLeft: SPACING.xs,
     },
+
+    // Actions
     actions: {
         flexDirection: 'row',
-        marginTop: SPACING.md,
+        marginTop: SPACING.md + 4,
+        gap: SPACING.sm,
     },
     actionBtn: {
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: SPACING.sm,
+        paddingVertical: SPACING.sm + 2,
         borderRadius: BORDER_RADIUS.md,
-        marginHorizontal: SPACING.xs,
+        gap: SPACING.xs,
         borderWidth: 1.5,
     },
     approveBtn: {
         borderColor: COLORS.success,
-        backgroundColor: `${COLORS.success}10`,
+        backgroundColor: COLORS.successAlpha10,
     },
     rejectBtn: {
         borderColor: COLORS.error,
-        backgroundColor: `${COLORS.error}10`,
+        backgroundColor: COLORS.errorAlpha10,
     },
     actionText: {
         fontSize: FONTS.caption,
-        fontWeight: '600',
-        marginLeft: SPACING.xs,
+        fontWeight: FONTS.weight.semibold,
+        letterSpacing: 0.2,
     },
     viewDetailsBtn: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: SPACING.sm,
+        marginTop: SPACING.sm + 2,
+        gap: SPACING.xs - 2,
     },
     viewDetailsText: {
         fontSize: FONTS.caption,
         color: COLORS.primary,
-        fontWeight: '600',
-        marginRight: SPACING.xs,
+        fontWeight: FONTS.weight.semibold,
     },
+
+    // Empty State
     emptyState: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: SPACING.xxl,
+        paddingVertical: SPACING.section,
+        paddingHorizontal: SPACING.xl,
     },
-    emptyText: {
-        fontSize: FONTS.h5,
+    emptyIconContainer: {
+        width: 120,
+        height: 120,
+        borderRadius: BORDER_RADIUS.xxl,
+        backgroundColor: COLORS.surfaceVariant,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: SPACING.lg,
+    },
+    emptyTitle: {
+        fontSize: FONTS.h4,
+        fontWeight: FONTS.weight.bold,
+        color: COLORS.textPrimary,
+        marginBottom: SPACING.xs,
+        textAlign: 'center',
+    },
+    emptySubtitle: {
+        fontSize: FONTS.caption,
         color: COLORS.textSecondary,
-        marginTop: SPACING.lg,
+        textAlign: 'center',
+        lineHeight: FONTS.caption * 1.5,
     },
 });
 

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { COLORS, SPACING, FONTS, SHADOWS, BORDER_RADIUS } from '../../styles/theme';
 import { Ionicons } from '@expo/vector-icons';
 import api, { endpoints } from '../../api/axiosConfig';
 
-const VisitorLogsScreen = () => {
+const VisitorLogsScreen = ({ navigation }) => {
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -59,9 +61,17 @@ const VisitorLogsScreen = () => {
     );
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['top']}>
+            <StatusBar style="dark" />
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Visitor Logs</Text>
+                {navigation && navigation.canGoBack && navigation.canGoBack() && (
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                        <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
+                    </TouchableOpacity>
+                )}
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.headerTitle}>Visitor Logs</Text>
+                </View>
             </View>
             {loading ? (
                 <View style={styles.loadingContainer}>
@@ -84,7 +94,7 @@ const VisitorLogsScreen = () => {
                     )}
                 />
             )}
-        </View>
+        </SafeAreaView>
     );
 };
 
@@ -94,10 +104,18 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.background,
     },
     header: {
+        flexDirection: 'row',
+        alignItems: 'center',
         padding: SPACING.md,
         backgroundColor: COLORS.surface,
-        ...SHADOWS.small,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
         marginBottom: SPACING.sm,
+    },
+    backButton: {
+        padding: SPACING.xs,
+        marginRight: SPACING.md,
+        marginLeft: -SPACING.xs,
     },
     headerTitle: {
         fontSize: FONTS.h4,

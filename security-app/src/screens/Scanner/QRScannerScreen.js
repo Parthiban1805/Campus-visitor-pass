@@ -8,10 +8,12 @@ import {
     Vibration,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import CustomButton from '../../components/CustomButton';
 import api, { endpoints } from '../../api/axiosConfig';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../../styles/theme';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS, DIMENSIONS } from '../../styles/theme';
 
 const QRScannerScreen = ({ navigation }) => {
     const [permission, requestPermission] = useCameraPermissions();
@@ -25,12 +27,14 @@ const QRScannerScreen = ({ navigation }) => {
 
     if (!permission.granted) {
         return (
-            <View style={styles.container}>
-                <View style={styles.permissionContainer}>
-                    <Ionicons name="camera-outline" size={80} color={COLORS.textHint} />
-                    <Text style={styles.permissionTitle}>Camera Permission Required</Text>
+            <SafeAreaView style={styles.permissionContainer}>
+                <View style={styles.permissionContent}>
+                    <View style={styles.permissionIcon}>
+                        <Ionicons name="camera" size={64} color={COLORS.primary} />
+                    </View>
+                    <Text style={styles.permissionTitle}>Camera Access Required</Text>
                     <Text style={styles.permissionText}>
-                        We need camera access to scan visitor QR codes
+                        We need permission to access your camera to scan visitor QR passes.
                     </Text>
                     <CustomButton
                         title="Grant Permission"
@@ -38,7 +42,7 @@ const QRScannerScreen = ({ navigation }) => {
                         style={styles.permissionButton}
                     />
                 </View>
-            </View>
+            </SafeAreaView>
         );
     }
 
@@ -55,30 +59,35 @@ const QRScannerScreen = ({ navigation }) => {
 
             if (response.data.success) {
                 const visitor = response.data.data.visitor;
-                Vibration.vibrate([0, 100, 100, 100]);
+                Vibration.vibrate([0, 50, 50, 50]); // Success pattern
 
                 Alert.alert(
-                    '✓ Success',
+                    'Success',
                     `${scanMode === 'entry' ? 'Entry' : 'Exit'} Logged\n\n` +
                     `Visitor: ${visitor.name}\n` +
                     `Purpose: ${visitor.purpose || 'N/A'}`,
                     [
                         {
-                            text: 'OK',
+                            text: 'Scan Next',
                             onPress: () => {
                                 setScanned(false);
                                 setProcessing(false);
                             },
                         },
+                        {
+                            text: 'Done',
+                            style: 'cancel',
+                            onPress: () => navigation.goBack(),
+                        }
                     ]
                 );
             }
         } catch (error) {
-            Vibration.vibrate([0, 500]);
-            const message = error.response?.data?.message || 'QR scan failed';
+            Vibration.vibrate([0, 500]); // Error pattern
+            const message = error.response?.data?.message || 'Invalid QR Code or Scan Failed';
 
             Alert.alert(
-                '✗ Scan Failed',
+                'Scan Failed',
                 message,
                 [
                     {
@@ -94,223 +103,240 @@ const QRScannerScreen = ({ navigation }) => {
     };
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
+            <StatusBar style="light" />
+
+            {/* Header Overlay */}
             <View style={styles.header}>
                 <TouchableOpacity
                     onPress={() => navigation.goBack()}
                     style={styles.backButton}
                 >
-                    <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+                    <Ionicons name="close" size={28} color={COLORS.white} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Scan QR Code</Text>
                 <View style={{ width: 40 }} />
             </View>
 
-            <CameraView
-                style={styles.camera}
-                facing="back"
-                onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-                barcodeScannerSettings={{
-                    barcodeTypes: ['qr'],
-                }}
-            >
-                <View style={styles.overlay}>
-                    <View style={styles.scanArea}>
-                        <View style={[styles.corner, styles.topLeft]} />
-                        <View style={[styles.corner, styles.topRight]} />
-                        <View style={[styles.corner, styles.bottomLeft]} />
-                        <View style={[styles.corner, styles.bottomRight]} />
+            <View style={styles.cameraContainer}>
+                <CameraView
+                    style={styles.camera}
+                    facing="back"
+                    onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+                    barcodeScannerSettings={{
+                        barcodeTypes: ['qr'],
+                    }}
+                >
+                    <View style={styles.overlay}>
+                        <View style={styles.scanFrame}>
+                            <View style={[styles.corner, styles.topLeft]} />
+                            <View style={[styles.corner, styles.topRight]} />
+                            <View style={[styles.corner, styles.bottomLeft]} />
+                            <View style={[styles.corner, styles.bottomRight]} />
+
+                            {processing && (
+                                <View style={styles.processingContainer}>
+                                    <ActivityIndicator size="large" color={COLORS.primary} />
+                                </View>
+                            )}
+                        </View>
+
+                        <Text style={styles.hintText}>
+                            Align QR code within the frame to scan
+                        </Text>
                     </View>
+                </CameraView>
+            </View>
 
-                    <Text style={styles.instructionText}>
-                        {processing
-                            ? 'Processing...'
-                            : 'Position QR code within the frame'}
-                    </Text>
-                </View>
-            </CameraView>
-
+            {/* Bottom Controls */}
             <View style={styles.footer}>
-                <View style={styles.modeSelector}>
+                <View style={styles.modeToggle}>
                     <TouchableOpacity
                         style={[
                             styles.modeButton,
                             scanMode === 'entry' && styles.modeButtonActive,
                         ]}
                         onPress={() => setScanMode('entry')}
-                        disabled={processing}
+                        activeOpacity={0.8}
                     >
-                        <Ionicons
-                            name="log-in"
-                            size={24}
-                            color={scanMode === 'entry' ? COLORS.white : COLORS.textSecondary}
-                        />
-                        <Text
-                            style={[
-                                styles.modeText,
-                                scanMode === 'entry' && styles.modeTextActive,
-                            ]}
-                        >
-                            Entry
-                        </Text>
+                        <Text style={[
+                            styles.modeText,
+                            scanMode === 'entry' && styles.modeTextActive
+                        ]}>ENTRY</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         style={[
                             styles.modeButton,
                             scanMode === 'exit' && styles.modeButtonActive,
+                            scanMode === 'exit' && { backgroundColor: COLORS.error }
                         ]}
                         onPress={() => setScanMode('exit')}
-                        disabled={processing}
+                        activeOpacity={0.8}
                     >
-                        <Ionicons
-                            name="log-out"
-                            size={24}
-                            color={scanMode === 'exit' ? COLORS.white : COLORS.textSecondary}
-                        />
-                        <Text
-                            style={[
-                                styles.modeText,
-                                scanMode === 'exit' && styles.modeTextActive,
-                            ]}
-                        >
-                            Exit
-                        </Text>
+                        <Text style={[
+                            styles.modeText,
+                            scanMode === 'exit' && styles.modeTextActive
+                        ]}>EXIT</Text>
                     </TouchableOpacity>
                 </View>
+
+                <Text style={styles.modeDescription}>
+                    Current Mode: <Text style={{ fontWeight: 'bold' }}>{scanMode.toUpperCase()}</Text>
+                </Text>
             </View>
-        </View>
+        </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.black,
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingTop: 60,
-        paddingBottom: SPACING.md,
-        paddingHorizontal: SPACING.lg,
-        backgroundColor: '#388E3C',
-    },
-    backButton: {
-        padding: SPACING.sm,
-    },
-    headerTitle: {
-        fontSize: FONTS.h4,
-        fontWeight: '600',
-        color: COLORS.white,
+        backgroundColor: COLORS.textPrimary, // Dark background for scanner
     },
     permissionContainer: {
         flex: 1,
+        backgroundColor: COLORS.background,
+        justifyContent: 'center',
+        padding: SPACING.xl,
+    },
+    permissionContent: {
+        alignItems: 'center',
+        padding: SPACING.xl,
+        backgroundColor: COLORS.surface,
+        borderRadius: BORDER_RADIUS.xl,
+        ...SHADOWS.md,
+    },
+    permissionIcon: {
+        width: 80,
+        height: 80,
+        borderRadius: BORDER_RADIUS.round,
+        backgroundColor: COLORS.primaryAlpha10,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: SPACING.xxl,
-        backgroundColor: COLORS.background,
+        marginBottom: SPACING.lg,
     },
     permissionTitle: {
         fontSize: FONTS.h3,
-        fontWeight: '700',
+        fontWeight: FONTS.weight.bold,
         color: COLORS.textPrimary,
-        marginTop: SPACING.lg,
+        marginBottom: SPACING.md,
+        textAlign: 'center',
     },
     permissionText: {
         fontSize: FONTS.body,
         color: COLORS.textSecondary,
         textAlign: 'center',
-        marginTop: SPACING.md,
-        marginBottom: SPACING.xl,
+        marginBottom: SPACING.lg,
+        lineHeight: 22,
     },
     permissionButton: {
-        minWidth: 200,
+        width: '100%',
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: SPACING.lg,
+        paddingVertical: SPACING.md,
+        position: 'absolute',
+        top: 40, // Adjust for safe area if needed manual
+        left: 0,
+        right: 0,
+        zIndex: 10,
+    },
+    backButton: {
+        width: 40,
+        height: 40,
+        borderRadius: BORDER_RADIUS.round,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    headerTitle: {
+        fontSize: FONTS.h4,
+        fontWeight: FONTS.weight.semibold,
+        color: COLORS.white,
+    },
+    cameraContainer: {
+        flex: 1,
+        overflow: 'hidden',
+        borderBottomLeftRadius: BORDER_RADIUS.xl,
+        borderBottomRightRadius: BORDER_RADIUS.xl,
     },
     camera: {
         flex: 1,
     },
     overlay: {
         flex: 1,
-        backgroundColor: 'transparent',
+        backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    scanArea: {
-        width: 250,
-        height: 250,
+    scanFrame: {
+        width: 260,
+        height: 260,
         position: 'relative',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     corner: {
         position: 'absolute',
         width: 40,
         height: 40,
-        borderColor: COLORS.white,
+        borderColor: COLORS.primary,
         borderWidth: 4,
     },
-    topLeft: {
-        top: 0,
-        left: 0,
-        borderRightWidth: 0,
-        borderBottomWidth: 0,
-    },
-    topRight: {
-        top: 0,
-        right: 0,
-        borderLeftWidth: 0,
-        borderBottomWidth: 0,
-    },
-    bottomLeft: {
-        bottom: 0,
-        left: 0,
-        borderRightWidth: 0,
-        borderTopWidth: 0,
-    },
-    bottomRight: {
-        bottom: 0,
-        right: 0,
-        borderLeftWidth: 0,
-        borderTopWidth: 0,
-    },
-    instructionText: {
-        fontSize: FONTS.body,
+    topLeft: { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0 },
+    topRight: { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0 },
+    bottomLeft: { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0 },
+    bottomRight: { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0 },
+    hintText: {
         color: COLORS.white,
-        textAlign: 'center',
+        fontSize: FONTS.body,
         marginTop: SPACING.xl,
         backgroundColor: 'rgba(0,0,0,0.7)',
-        paddingHorizontal: SPACING.lg,
-        paddingVertical: SPACING.md,
+        paddingHorizontal: SPACING.md,
+        paddingVertical: SPACING.sm,
         borderRadius: BORDER_RADIUS.lg,
+        overflow: 'hidden',
     },
     footer: {
-        backgroundColor: COLORS.white,
-        paddingVertical: SPACING.lg,
-        paddingHorizontal: SPACING.lg,
+        backgroundColor: COLORS.surface,
+        paddingVertical: SPACING.xl,
+        paddingHorizontal: SPACING.xxl,
+        alignItems: 'center',
     },
-    modeSelector: {
+    modeToggle: {
         flexDirection: 'row',
-        justifyContent: 'space-around',
+        backgroundColor: COLORS.surfaceVariant,
+        borderRadius: BORDER_RADIUS.pill,
+        padding: SPACING.xs,
+        width: '100%',
+        marginBottom: SPACING.md,
     },
     modeButton: {
         flex: 1,
-        alignItems: 'center',
         paddingVertical: SPACING.md,
-        borderRadius: BORDER_RADIUS.lg,
-        marginHorizontal: SPACING.xs,
-        backgroundColor: COLORS.background,
+        alignItems: 'center',
+        borderRadius: BORDER_RADIUS.pill,
     },
     modeButtonActive: {
-        backgroundColor: '#388E3C',
+        backgroundColor: COLORS.primary,
+        ...SHADOWS.sm,
     },
     modeText: {
-        fontSize: FONTS.caption,
-        fontWeight: '600',
+        fontSize: FONTS.small,
+        fontWeight: FONTS.weight.bold,
         color: COLORS.textSecondary,
-        marginTop: SPACING.xs,
+        letterSpacing: 1,
     },
     modeTextActive: {
         color: COLORS.white,
+    },
+    modeDescription: {
+        fontSize: FONTS.caption,
+        color: COLORS.textSecondary,
     },
 });
 

@@ -102,8 +102,7 @@ cp .env.example .env
 npm run seed
 
 # Start development server
-npm run dev
-```
+C```
 
 The backend server will run on `http://localhost:5000`
 

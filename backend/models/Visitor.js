@@ -61,7 +61,6 @@ const visitorSchema = new mongoose.Schema(
 );
 
 // Index for faster queries
-visitorSchema.index({ email: 1 });
 visitorSchema.index({ phone: 1 });
 
 // Hash password before saving

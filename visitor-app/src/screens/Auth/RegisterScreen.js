@@ -98,12 +98,20 @@ const RegisterScreen = ({ navigation }) => {
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
                 >
-                    <View style={styles.header}>
-                        <View style={styles.iconContainer}>
-                            <Ionicons name="person-add-outline" size={32} color={COLORS.primary} />
+                    <View style={styles.headerContainer}>
+                        <TouchableOpacity
+                            onPress={() => navigation.goBack()}
+                            style={styles.backButton}
+                        >
+                            <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
+                        </TouchableOpacity>
+                        <View style={styles.header}>
+                            <View style={styles.iconContainer}>
+                                <Ionicons name="person-add-outline" size={32} color={COLORS.primary} />
+                            </View>
+                            <Text style={styles.title}>Create Account</Text>
+                            <Text style={styles.subtitle}>Join our campus visitor system</Text>
                         </View>
-                        <Text style={styles.title}>Create Account</Text>
-                        <Text style={styles.subtitle}>Join our campus visitor system</Text>
                     </View>
 
                     <View style={styles.form}>
@@ -193,9 +201,17 @@ const styles = StyleSheet.create({
         paddingHorizontal: SPACING.lg,
         paddingBottom: SPACING.xl,
     },
-    header: {
-        marginTop: SPACING.xl,
+    headerContainer: {
+        marginTop: SPACING.md,
         marginBottom: SPACING.xl,
+    },
+    backButton: {
+        padding: SPACING.sm,
+        alignSelf: 'flex-start',
+        marginLeft: -SPACING.sm,
+        marginBottom: SPACING.sm,
+    },
+    header: {
         alignItems: 'center',
     },
     iconContainer: {

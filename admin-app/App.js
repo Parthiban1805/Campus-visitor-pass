@@ -39,11 +39,13 @@ const MainTabs = () => {
 
                     return <Ionicons name={iconName} size={size} color={color} />;
                 },
-                tabBarActiveTintColor: '#1976D2',
+                tabBarActiveTintColor: COLORS.primary,
                 tabBarInactiveTintColor: COLORS.textSecondary,
                 tabBarStyle: {
                     paddingBottom: 5,
                     height: 60,
+                    backgroundColor: COLORS.surface,
+                    borderTopColor: COLORS.border,
                 },
                 headerShown: false,
             })}

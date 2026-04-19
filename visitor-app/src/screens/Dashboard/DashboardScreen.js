@@ -11,10 +11,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../context/AuthContext';
 import StatusBadge from '../../components/StatusBadge';
 import api, { endpoints } from '../../api/axiosConfig';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../../styles/theme';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS, ICON_SIZES, DIMENSIONS } from '../../styles/theme';
 
 const DashboardScreen = ({ navigation }) => {
     const { user, logout } = useAuth();
@@ -68,7 +69,7 @@ const DashboardScreen = ({ navigation }) => {
     }
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['top']}>
             <StatusBar style="dark" />
 
             <View style={styles.header}>
@@ -76,8 +77,8 @@ const DashboardScreen = ({ navigation }) => {
                     <Text style={styles.greeting}>Welcome back,</Text>
                     <Text style={styles.userName}>{user?.name}</Text>
                 </View>
-                <TouchableOpacity onPress={logout} style={styles.iconButton}>
-                    <Ionicons name="log-out-outline" size={24} color={COLORS.textSecondary} />
+                <TouchableOpacity onPress={logout} style={styles.logoutButton}>
+                    <Ionicons name="log-out-outline" size={ICON_SIZES.md} color={COLORS.error} />
                 </TouchableOpacity>
             </View>
 
@@ -85,52 +86,70 @@ const DashboardScreen = ({ navigation }) => {
                 style={styles.content}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor={COLORS.primary}
+                        colors={[COLORS.primary]}
+                    />
                 }
-                contentContainerStyle={{ paddingBottom: SPACING.xxl }}
+                contentContainerStyle={styles.scrollContent}
             >
                 {/* Stats Grid */}
                 <View style={styles.statsGrid}>
                     <StatCard
-                        icon="document-text-outline"
+                        icon="document-text"
                         label="Total Requests"
                         value={stats.totalRequests}
                         color={COLORS.primary}
+                        iconBg={COLORS.primaryAlpha10}
                     />
                     <StatCard
-                        icon="time-outline"
+                        icon="hourglass"
                         label="Pending"
                         value={stats.pendingRequests}
                         color={COLORS.warning}
+                        iconBg={COLORS.warningAlpha10}
                     />
                     <StatCard
-                        icon="checkmark-circle-outline"
+                        icon="checkmark-circle"
                         label="Approved"
                         value={stats.approvedRequests}
                         color={COLORS.success}
+                        iconBg={COLORS.successAlpha10}
                     />
                     <StatCard
-                        icon="close-circle-outline"
+                        icon="close-circle"
                         label="Rejected"
                         value={stats.rejectedRequests}
                         color={COLORS.error}
+                        iconBg={COLORS.errorAlpha10}
                     />
                 </View>
 
                 {/* Main Action */}
                 <TouchableOpacity
-                    style={styles.createButton}
+                    style={[styles.createButtonContainer, SHADOWS.medium]}
                     onPress={() => navigation.navigate('CreateRequest')}
                     activeOpacity={0.9}
                 >
-                    <View style={styles.createIcon}>
-                        <Ionicons name="add" size={32} color={COLORS.white} />
-                    </View>
-                    <View>
-                        <Text style={styles.createTitle}>New Visit Request</Text>
-                        <Text style={styles.createSubtitle}>Schedule a new campus visit</Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={24} color={COLORS.white} style={{ marginLeft: 'auto' }} />
+                    <LinearGradient
+                        colors={[COLORS.primaryLight, COLORS.primary]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.createButtonGradient}
+                    >
+                        <View style={styles.createContent}>
+                            <View style={styles.createIconContainer}>
+                                <Ionicons name="add" size={ICON_SIZES.xl || 32} color={COLORS.primary} />
+                            </View>
+                            <View style={styles.createTextContainer}>
+                                <Text style={styles.createTitle}>New Visit Request</Text>
+                                <Text style={styles.createSubtitle}>Schedule a new campus visit</Text>
+                            </View>
+                        </View>
+                        <Ionicons name="chevron-forward" size={ICON_SIZES.md} color={COLORS.white} />
+                    </LinearGradient>
                 </TouchableOpacity>
 
                 {/* Recent Requests Section */}
@@ -144,8 +163,11 @@ const DashboardScreen = ({ navigation }) => {
 
                     {recentRequests.length === 0 ? (
                         <View style={styles.emptyState}>
-                            <Ionicons name="documents-outline" size={48} color={COLORS.textTertiary} />
-                            <Text style={styles.emptyText}>No requests found</Text>
+                            <View style={styles.emptyIconContainer}>
+                                <Ionicons name="documents-outline" size={48} color={COLORS.textTertiary} />
+                            </View>
+                            <Text style={styles.emptyTitle}>No requests yet</Text>
+                            <Text style={styles.emptySubtitle}>Your recent visit requests will appear here</Text>
                         </View>
                     ) : (
                         recentRequests.map((request) => (
@@ -164,12 +186,12 @@ const DashboardScreen = ({ navigation }) => {
     );
 };
 
-const StatCard = ({ icon, label, value, color }) => (
+const StatCard = ({ icon, label, value, color, iconBg }) => (
     <View style={[styles.statCard, SHADOWS.card]}>
-        <View style={[styles.statIcon, { backgroundColor: color + '15' }]}>
-            <Ionicons name={icon} size={20} color={color} />
+        <View style={[styles.statIconContainer, { backgroundColor: iconBg }]}>
+            <Ionicons name={icon} size={ICON_SIZES.md} color={color} />
         </View>
-        <Text style={styles.statValue}>{value}</Text>
+        <Text style={styles.statValue}>{value || 0}</Text>
         <Text style={styles.statLabel}>{label}</Text>
     </View>
 );
@@ -228,20 +250,22 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: COLORS.textPrimary,
     },
-    iconButton: {
+    logoutButton: {
         padding: SPACING.sm,
-        backgroundColor: COLORS.surface,
-        borderRadius: BORDER_RADIUS.round,
-        ...SHADOWS.light,
+        backgroundColor: COLORS.errorAlpha10,
+        borderRadius: BORDER_RADIUS.md,
     },
     content: {
         flex: 1,
+    },
+    scrollContent: {
         paddingHorizontal: SPACING.lg,
+        paddingBottom: SPACING.xxl,
     },
     statsGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        justifyContent: 'space-between',
+        marginHorizontal: -SPACING.xs,
         marginTop: SPACING.md,
         marginBottom: SPACING.lg,
     },
@@ -249,54 +273,81 @@ const styles = StyleSheet.create({
         width: '48%',
         backgroundColor: COLORS.surface,
         borderRadius: BORDER_RADIUS.lg,
-        padding: SPACING.md,
+        padding: SPACING.md + 4,
+        marginHorizontal: '1%',
         marginBottom: SPACING.md,
-        alignItems: 'flex-start',
         borderWidth: 1,
-        borderColor: COLORS.surfaceVariant,
+        borderColor: COLORS.border,
     },
-    statIcon: {
-        padding: SPACING.xs,
-        borderRadius: BORDER_RADIUS.md,
-        marginBottom: SPACING.sm,
+    statIconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: BORDER_RADIUS.lg,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: SPACING.md,
     },
     statValue: {
         fontSize: FONTS.h2,
-        fontWeight: '700',
+        fontWeight: FONTS.weight.bold,
         color: COLORS.textPrimary,
+        marginBottom: SPACING.xs - 2,
     },
     statLabel: {
-        fontSize: FONTS.small,
+        fontSize: FONTS.caption,
         color: COLORS.textSecondary,
-        marginTop: SPACING.xs,
+        fontWeight: FONTS.weight.medium,
     },
-    createButton: {
+    createButtonContainer: {
+        marginTop: SPACING.md,
+        marginBottom: SPACING.xxl,
+        borderRadius: 24,
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.35,
+        shadowRadius: 16,
+        elevation: 8,
+    },
+    createButtonGradient: {
+        borderRadius: 24,
+        paddingVertical: SPACING.lg,
+        paddingHorizontal: SPACING.lg,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.primary,
-        borderRadius: BORDER_RADIUS.xl,
-        padding: SPACING.lg,
-        marginTop: SPACING.sm,
-        marginBottom: SPACING.xl,
-        ...SHADOWS.medium,
+        justifyContent: 'space-between',
     },
-    createIcon: {
-        width: 48,
-        height: 48,
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        borderRadius: BORDER_RADIUS.round,
+    createContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    createIconContainer: {
+        width: 60,
+        height: 60,
+        backgroundColor: COLORS.white,
+        borderRadius: 30,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: SPACING.md,
+        marginRight: SPACING.lg,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    createTextContainer: {
+        flex: 1,
     },
     createTitle: {
-        fontSize: FONTS.h4,
-        fontWeight: '700',
+        fontSize: FONTS.h3,
+        fontWeight: '800',
         color: COLORS.white,
+        marginBottom: 4,
     },
     createSubtitle: {
-        fontSize: FONTS.caption,
-        color: 'rgba(255,255,255,0.8)',
+        fontSize: FONTS.body,
+        color: 'rgba(255,255,255,0.85)',
+        fontWeight: '500',
     },
     section: {
         marginBottom: SPACING.xl,
@@ -309,12 +360,12 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         fontSize: FONTS.h4,
-        fontWeight: '700',
+        fontWeight: FONTS.weight.bold,
         color: COLORS.textPrimary,
     },
     seeAllText: {
         fontSize: FONTS.body,
-        fontWeight: '600',
+        fontWeight: FONTS.weight.semibold,
         color: COLORS.primary,
     },
     requestCard: {
@@ -323,7 +374,7 @@ const styles = StyleSheet.create({
         padding: SPACING.md,
         marginBottom: SPACING.md,
         borderWidth: 1,
-        borderColor: COLORS.surfaceVariant,
+        borderColor: COLORS.border,
     },
     requestRow: {
         flexDirection: 'row',
@@ -336,26 +387,43 @@ const styles = StyleSheet.create({
     },
     requestPurpose: {
         fontSize: FONTS.body,
-        fontWeight: '600',
+        fontWeight: FONTS.weight.semibold,
         color: COLORS.textPrimary,
         marginBottom: SPACING.xs,
     },
     requestDate: {
         fontSize: FONTS.caption,
         color: COLORS.textSecondary,
+        fontWeight: FONTS.weight.medium,
     },
     emptyState: {
         alignItems: 'center',
         padding: SPACING.xl,
-        borderWidth: 2,
+        backgroundColor: COLORS.surface,
+        borderRadius: BORDER_RADIUS.lg,
+        borderWidth: 1,
         borderColor: COLORS.border,
         borderStyle: 'dashed',
-        borderRadius: BORDER_RADIUS.lg,
     },
-    emptyText: {
-        color: COLORS.textTertiary,
-        marginTop: SPACING.sm,
-        fontWeight: '500',
+    emptyIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: BORDER_RADIUS.round,
+        backgroundColor: COLORS.surfaceVariant,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: SPACING.md,
+    },
+    emptyTitle: {
+        fontSize: FONTS.h5,
+        fontWeight: FONTS.weight.bold,
+        color: COLORS.textPrimary,
+        marginBottom: SPACING.xs,
+    },
+    emptySubtitle: {
+        color: COLORS.textSecondary,
+        fontSize: FONTS.caption,
+        textAlign: 'center',
     },
 });
 

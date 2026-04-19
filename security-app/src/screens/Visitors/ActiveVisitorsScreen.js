@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import api, { endpoints } from '../../api/axiosConfig';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../../styles/theme';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS, ICON_SIZES } from '../../styles/theme';
 
 const ActiveVisitorsScreen = ({ navigation }) => {
     const [visitors, setVisitors] = useState([]);
@@ -11,9 +13,14 @@ const ActiveVisitorsScreen = ({ navigation }) => {
 
     const fetchActiveVisitors = async () => {
         try {
-            const response = await api.get(endpoints.getActiveVisitors);
+            // Ideally use a specific endpoint or filter
+            const response = await api.get(endpoints.getActiveVisitors || endpoints.getAllRequests);
+            // Fallback if specific endpoint doesn't exist in this context context, 
+            // but usually a security app has this. 
+            // I will assume the endpoint exists as per previous file content.
+
             if (response.data.success) {
-                setVisitors(response.data.data.visitors);
+                setVisitors(response.data.data.visitors || []);
             }
         } catch (error) {
             console.error('Error fetching active visitors:', error);
@@ -32,29 +39,66 @@ const ActiveVisitorsScreen = ({ navigation }) => {
         fetchActiveVisitors();
     };
 
+    const handleCheckOut = (visitor) => {
+        // Navigate to scanner with preset mode or data
+        navigation.navigate('Scanner', { mode: 'exit', visitorId: visitor._id });
+    };
+
     const renderItem = ({ item }) => (
-        <View style={styles.card}>
-            <View style={styles.avatarContainer}>
-                <Ionicons name="person" size={24} color={COLORS.primary} />
+        <View style={[styles.card, SHADOWS.card]}>
+            <View style={styles.cardHeader}>
+                <View style={styles.userInfo}>
+                    <View style={styles.avatarContainer}>
+                        <Text style={styles.avatarText}>
+                            {item.visitor?.name?.charAt(0).toUpperCase() || 'V'}
+                        </Text>
+                    </View>
+                    <View>
+                        <Text style={styles.visitorName}>{item.visitor?.name || 'Unknown Visitor'}</Text>
+                        <Text style={styles.departmentText}>{item.department || 'General'}</Text>
+                    </View>
+                </View>
+                <View style={styles.statusBadge}>
+                    <View style={styles.statusDot} />
+                    <Text style={styles.statusText}>INSIDE</Text>
+                </View>
             </View>
-            <View style={styles.details}>
-                <Text style={styles.visitorName}>{item.visitor?.name || 'Unknown Visitor'}</Text>
-                <Text style={styles.purposeText}>Purpose: {item.purpose}</Text>
-                <Text style={styles.timeText}>
-                    Entered: {new Date(item.entryTime).toLocaleString()}
-                </Text>
+
+            <View style={styles.divider} />
+
+            <View style={styles.detailsRow}>
+                <View style={styles.detailItem}>
+                    <Ionicons name="time-outline" size={ICON_SIZES.xs} color={COLORS.textSecondary} />
+                    <Text style={styles.detailText}>
+                        In: {new Date(item.entryTime || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </Text>
+                </View>
+                <View style={styles.detailItem}>
+                    <Ionicons name="person-outline" size={ICON_SIZES.xs} color={COLORS.textSecondary} />
+                    <Text style={styles.detailText}>
+                        Host: {item.personToMeet?.name || 'N/A'}
+                    </Text>
+                </View>
             </View>
-            <View style={styles.statusBadge}>
-                <Text style={styles.statusText}>Inside</Text>
-            </View>
+
+            <TouchableOpacity
+                style={styles.checkoutButton}
+                onPress={() => handleCheckOut(item)}
+                activeOpacity={0.8}
+            >
+                <Text style={styles.checkoutText}>Check Out</Text>
+                <Ionicons name="log-out-outline" size={ICON_SIZES.sm} color={COLORS.primary} />
+            </TouchableOpacity>
         </View>
     );
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['top']}>
+            <StatusBar style="dark" />
+
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+                    <Ionicons name="arrow-back" size={ICON_SIZES.md} color={COLORS.textPrimary} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Active Visitors</Text>
                 <View style={{ width: 40 }} />
@@ -68,20 +112,30 @@ const ActiveVisitorsScreen = ({ navigation }) => {
                 <FlatList
                     data={visitors}
                     renderItem={renderItem}
-                    keyExtractor={item => item._id}
+                    keyExtractor={item => item._id || Math.random().toString()}
                     contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
                     refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            tintColor={COLORS.primary}
+                        />
                     }
                     ListEmptyComponent={() => (
                         <View style={styles.emptyState}>
-                            <Ionicons name="people-outline" size={60} color={COLORS.textHint} />
-                            <Text style={styles.emptyText}>No active visitors found</Text>
+                            <View style={styles.emptyIconContainer}>
+                                <Ionicons name="people" size={48} color={COLORS.textTertiary} />
+                            </View>
+                            <Text style={styles.emptyTitle}>No Active Visitors</Text>
+                            <Text style={styles.emptySubtitle}>
+                                There are currently no visitors checked in on campus.
+                            </Text>
                         </View>
                     )}
                 />
             )}
-        </View>
+        </SafeAreaView>
     );
 };
 
@@ -94,68 +148,123 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: 60,
-        paddingBottom: SPACING.md,
+        paddingVertical: SPACING.md,
         paddingHorizontal: SPACING.lg,
-        backgroundColor: COLORS.primary,
-        ...SHADOWS.small,
+        backgroundColor: COLORS.surface,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
     },
     backButton: {
-        padding: SPACING.sm,
+        padding: SPACING.xs,
+        marginLeft: -SPACING.xs,
     },
     headerTitle: {
         fontSize: FONTS.h4,
-        fontWeight: '600',
-        color: COLORS.white,
+        fontWeight: FONTS.weight.bold,
+        color: COLORS.textPrimary,
     },
     listContent: {
-        padding: SPACING.md,
+        padding: SPACING.lg,
+        paddingBottom: SPACING.xxl,
     },
     card: {
+        backgroundColor: COLORS.surface,
+        borderRadius: BORDER_RADIUS.lg,
+        padding: SPACING.md,
+        marginBottom: SPACING.md,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: SPACING.md,
+    },
+    userInfo: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.white,
-        padding: SPACING.md,
-        borderRadius: BORDER_RADIUS.md,
-        marginBottom: SPACING.md,
-        ...SHADOWS.small,
+        flex: 1,
     },
     avatarContainer: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        backgroundColor: COLORS.primary + '15',
+        width: 48,
+        height: 48,
+        borderRadius: BORDER_RADIUS.round,
+        backgroundColor: COLORS.primaryAlpha10,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: SPACING.md,
     },
-    details: {
-        flex: 1,
+    avatarText: {
+        fontSize: FONTS.h5,
+        fontWeight: FONTS.weight.bold,
+        color: COLORS.primary,
     },
     visitorName: {
         fontSize: FONTS.h6,
-        fontWeight: '600',
+        fontWeight: FONTS.weight.bold,
         color: COLORS.textPrimary,
+        marginBottom: 2,
     },
-    purposeText: {
-        fontSize: FONTS.body,
+    departmentText: {
+        fontSize: FONTS.caption,
         color: COLORS.textSecondary,
-        marginVertical: 2,
-    },
-    timeText: {
-        fontSize: FONTS.small,
-        color: COLORS.textHint,
     },
     statusBadge: {
-        backgroundColor: COLORS.success + '20',
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: COLORS.successAlpha10,
         paddingHorizontal: SPACING.sm,
         paddingVertical: 4,
-        borderRadius: BORDER_RADIUS.sm,
+        borderRadius: BORDER_RADIUS.pill,
+    },
+    statusDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: COLORS.success,
+        marginRight: 6,
     },
     statusText: {
-        fontSize: FONTS.small,
+        fontSize: 10,
+        fontWeight: 'bold',
         color: COLORS.success,
-        fontWeight: '600',
+        letterSpacing: 0.5,
+    },
+    divider: {
+        height: 1,
+        backgroundColor: COLORS.borderLight,
+        marginBottom: SPACING.md,
+    },
+    detailsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: SPACING.md,
+    },
+    detailItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: SPACING.xs,
+    },
+    detailText: {
+        fontSize: FONTS.caption,
+        color: COLORS.textSecondary,
+    },
+    checkoutButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: SPACING.sm,
+        borderWidth: 1,
+        borderColor: COLORS.primaryAlpha20,
+        borderRadius: BORDER_RADIUS.md,
+        gap: SPACING.xs,
+        backgroundColor: COLORS.surfaceHover,
+    },
+    checkoutText: {
+        fontSize: FONTS.caption,
+        fontWeight: FONTS.weight.semibold,
+        color: COLORS.primary,
     },
     loadingContainer: {
         flex: 1,
@@ -163,15 +272,30 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     emptyState: {
-        flex: 1,
+        alignItems: 'center',
+        paddingVertical: SPACING.section,
+        paddingHorizontal: SPACING.xl,
+    },
+    emptyIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: BORDER_RADIUS.round,
+        backgroundColor: COLORS.surfaceVariant,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingTop: SPACING.xxl,
+        marginBottom: SPACING.md,
     },
-    emptyText: {
-        fontSize: FONTS.body,
-        color: COLORS.textHint,
-        marginTop: SPACING.md,
+    emptyTitle: {
+        fontSize: FONTS.h5,
+        fontWeight: FONTS.weight.bold,
+        color: COLORS.textPrimary,
+        marginBottom: SPACING.xs,
+    },
+    emptySubtitle: {
+        fontSize: FONTS.caption,
+        color: COLORS.textSecondary,
+        textAlign: 'center',
+        lineHeight: 20,
     },
 });
 

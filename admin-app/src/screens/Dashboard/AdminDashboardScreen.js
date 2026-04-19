@@ -13,7 +13,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import api, { endpoints } from '../../api/axiosConfig';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../../styles/theme';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS, ICON_SIZES } from '../../styles/theme';
 
 const AdminDashboardScreen = ({ navigation }) => {
     const { user, logout } = useAuth();
@@ -60,113 +60,139 @@ const AdminDashboardScreen = ({ navigation }) => {
     }
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['top']}>
             <StatusBar style="dark" />
 
+            {/* Header */}
             <View style={styles.header}>
-                <View>
-                    <Text style={styles.greeting}>Admin Portal</Text>
-                    <Text style={styles.userName}>{user?.name}</Text>
+                <View style={styles.headerContent}>
+                    <View>
+                        <Text style={styles.greeting}>Campus Admin</Text>
+                        <Text style={styles.userName}>{user?.name || 'Administrator'}</Text>
+                    </View>
+                    <TouchableOpacity onPress={logout} style={styles.logoutButton}>
+                        <Ionicons name="log-out-outline" size={ICON_SIZES.md} color={COLORS.error} />
+                    </TouchableOpacity>
                 </View>
-                <TouchableOpacity onPress={logout} style={styles.iconButton}>
-                    <Ionicons name="log-out-outline" size={24} color={COLORS.textSecondary} />
-                </TouchableOpacity>
             </View>
 
             <ScrollView
                 style={styles.content}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor={COLORS.primary}
+                        colors={[COLORS.primary]}
+                    />
                 }
                 contentContainerStyle={{ paddingBottom: SPACING.xxl }}
             >
-                {/* Stats Grid */}
-                <Text style={styles.sectionTitle}>Overview</Text>
-                <View style={styles.statsGrid}>
-                    <StatCard
-                        icon="people-outline"
-                        label="Total Visitors"
-                        value={stats.totalVisitors}
-                        color={COLORS.primary}
-                    />
-                    <StatCard
-                        icon="time-outline"
-                        label="Pending"
-                        value={stats.pendingRequests}
-                        color={COLORS.warning}
-                    />
-                    <StatCard
-                        icon="location-outline"
-                        label="Active Now"
-                        value={stats.activeVisitors}
-                        color={COLORS.info}
-                    />
-                    <StatCard
-                        icon="close-circle-outline"
-                        label="Rejected"
-                        value={stats.rejectedRequests}
-                        color={COLORS.error}
-                    />
+                {/* Stats Section */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Overview</Text>
+                    <Text style={styles.sectionSubtitle}>Real-time campus visitor statistics</Text>
+
+                    <View style={styles.statsGrid}>
+                        <StatCard
+                            icon="people"
+                            label="Total Visitors"
+                            value={stats.totalVisitors}
+                            color={COLORS.primary}
+                            iconBg={COLORS.primaryAlpha10}
+                        />
+                        <StatCard
+                            icon="hourglass"
+                            label="Pending"
+                            value={stats.pendingRequests}
+                            color={COLORS.warning}
+                            iconBg={COLORS.warningAlpha10}
+                        />
+                        <StatCard
+                            icon="location"
+                            label="Active Now"
+                            value={stats.activeVisitors}
+                            color={COLORS.info}
+                            iconBg={COLORS.infoAlpha10}
+                        />
+                        <StatCard
+                            icon="close-circle"
+                            label="Rejected"
+                            value={stats.rejectedRequests}
+                            color={COLORS.error}
+                            iconBg={COLORS.errorAlpha10}
+                        />
+                    </View>
                 </View>
 
-                {/* Quick Actions List */}
-                <Text style={[styles.sectionTitle, { marginTop: SPACING.lg }]}>Management</Text>
+                {/* Management Section */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Management</Text>
+                    <Text style={styles.sectionSubtitle}>Quick access to admin functions</Text>
 
-                <ActionListItem
-                    icon="document-text-outline"
-                    title="Visit Requests"
-                    subtitle={`${stats.pendingRequests} pending requests`}
-                    color={COLORS.warning}
-                    onPress={() => navigation.navigate('RequestsList')}
-                />
-                <ActionListItem
-                    icon="list-outline"
-                    title="Visitor Logs"
-                    subtitle="View entry/exit records"
-                    color={COLORS.info}
-                    onPress={() => navigation.navigate('VisitorLogs')}
-                />
-                <ActionListItem
-                    icon="shield-checkmark-outline"
-                    title="Security Management"
-                    subtitle="Manage security personnel"
-                    color={COLORS.success}
-                    onPress={() => navigation.navigate('SecurityManagement')}
-                />
-                <ActionListItem
-                    icon="settings-outline"
-                    title="System Settings"
-                    subtitle="Configure application"
-                    color={COLORS.secondary}
-                    onPress={() => navigation.navigate('Settings')}
-                />
-
+                    <View style={styles.actionsContainer}>
+                        <ActionCard
+                            icon="document-text"
+                            title="Visit Requests"
+                            subtitle={`${stats.pendingRequests} pending approval`}
+                            color={COLORS.warning}
+                            onPress={() => navigation.navigate('RequestsList')}
+                        />
+                        <ActionCard
+                            icon="list"
+                            title="Visitor Logs"
+                            subtitle="View entry and exit records"
+                            color={COLORS.info}
+                            onPress={() => navigation.navigate('VisitorLogs')}
+                        />
+                        <ActionCard
+                            icon="shield-checkmark"
+                            title="Security Management"
+                            subtitle="Manage security personnel"
+                            color={COLORS.success}
+                            onPress={() => navigation.navigate('SecurityManagement')}
+                        />
+                        <ActionCard
+                            icon="settings"
+                            title="System Settings"
+                            subtitle="Configure application"
+                            color={COLORS.secondary}
+                            onPress={() => navigation.navigate('Settings')}
+                        />
+                    </View>
+                </View>
             </ScrollView>
         </SafeAreaView>
     );
 };
 
-const StatCard = ({ icon, label, value, color }) => (
+// StatCard Component - Redesigned
+const StatCard = ({ icon, label, value, color, iconBg }) => (
     <View style={[styles.statCard, SHADOWS.card]}>
-        <View style={[styles.statIcon, { backgroundColor: color + '15' }]}>
-            <Ionicons name={icon} size={22} color={color} />
+        <View style={[styles.statIconContainer, { backgroundColor: iconBg }]}>
+            <Ionicons name={icon} size={ICON_SIZES.lg} color={color} />
         </View>
-        <Text style={styles.statValue}>{value}</Text>
+        <Text style={styles.statValue}>{value || 0}</Text>
         <Text style={styles.statLabel}>{label}</Text>
     </View>
 );
 
-const ActionListItem = ({ icon, title, subtitle, color, onPress }) => (
-    <TouchableOpacity style={[styles.actionItem, SHADOWS.card]} onPress={onPress} activeOpacity={0.7}>
-        <View style={[styles.actionIconContainer, { backgroundColor: color + '15' }]}>
-            <Ionicons name={icon} size={24} color={color} />
+// ActionCard Component - Redesigned
+const ActionCard = ({ icon, title, subtitle, color, onPress }) => (
+    <TouchableOpacity
+        style={[styles.actionCard, SHADOWS.card]}
+        onPress={onPress}
+        activeOpacity={0.7}
+    >
+        <View style={[styles.actionIconContainer, { backgroundColor: `${color}15` }]}>
+            <Ionicons name={icon} size={ICON_SIZES.md} color={color} />
         </View>
         <View style={styles.actionContent}>
             <Text style={styles.actionTitle}>{title}</Text>
             <Text style={styles.actionSubtitle}>{subtitle}</Text>
         </View>
-        <Ionicons name="chevron-forward" size={20} color={COLORS.textTertiary} />
+        <Ionicons name="chevron-forward" size={ICON_SIZES.sm} color={COLORS.textTertiary} />
     </TouchableOpacity>
 );
 
@@ -181,83 +207,113 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: COLORS.background,
     },
+
+    // Header Styles
     header: {
+        backgroundColor: COLORS.surface,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+    },
+    headerContent: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: SPACING.lg,
-        paddingVertical: SPACING.md,
-        backgroundColor: COLORS.background,
+        paddingVertical: SPACING.md + 4,
     },
     greeting: {
-        fontSize: FONTS.caption,
+        fontSize: FONTS.small,
         color: COLORS.textSecondary,
         textTransform: 'uppercase',
-        letterSpacing: 1,
+        letterSpacing: 1.2,
+        fontWeight: FONTS.weight.medium,
+        marginBottom: SPACING.xs - 2,
     },
     userName: {
-        fontSize: FONTS.h2,
-        fontWeight: '700',
+        fontSize: FONTS.h3,
+        fontWeight: FONTS.weight.bold,
         color: COLORS.textPrimary,
+        letterSpacing: -0.5,
     },
-    iconButton: {
+    logoutButton: {
         padding: SPACING.sm,
-        backgroundColor: COLORS.surface,
-        borderRadius: BORDER_RADIUS.round,
-        ...SHADOWS.light,
+        backgroundColor: COLORS.errorAlpha10,
+        borderRadius: BORDER_RADIUS.md,
     },
+
+    // Content Styles
     content: {
         flex: 1,
+    },
+
+    // Section Styles
+    section: {
+        paddingTop: SPACING.lg,
         paddingHorizontal: SPACING.lg,
     },
     sectionTitle: {
         fontSize: FONTS.h4,
-        fontWeight: '700',
+        fontWeight: FONTS.weight.bold,
         color: COLORS.textPrimary,
-        marginBottom: SPACING.md,
-        marginTop: SPACING.sm,
+        marginBottom: SPACING.xs,
+        letterSpacing: -0.3,
     },
+    sectionSubtitle: {
+        fontSize: FONTS.caption,
+        color: COLORS.textSecondary,
+        marginBottom: SPACING.md + 4,
+    },
+
+    // Stats Grid
     statsGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        justifyContent: 'space-between',
-        gap: SPACING.md,
+        marginHorizontal: -SPACING.xs,
     },
     statCard: {
         width: '48%',
         backgroundColor: COLORS.surface,
         borderRadius: BORDER_RADIUS.lg,
-        padding: SPACING.md,
+        padding: SPACING.md + 4,
+        marginHorizontal: '1%',
         marginBottom: SPACING.md,
         borderWidth: 1,
-        borderColor: COLORS.surfaceVariant,
+        borderColor: COLORS.border,
     },
-    statIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: BORDER_RADIUS.md,
+    statIconContainer: {
+        width: 56,
+        height: 56,
+        borderRadius: BORDER_RADIUS.lg,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: SPACING.sm,
+        marginBottom: SPACING.md,
     },
     statValue: {
-        fontSize: FONTS.h2,
-        fontWeight: '700',
+        fontSize: FONTS.h1,
+        fontWeight: FONTS.weight.bold,
         color: COLORS.textPrimary,
+        marginBottom: SPACING.xs - 2,
+        letterSpacing: -1,
     },
     statLabel: {
-        fontSize: FONTS.small,
+        fontSize: FONTS.caption,
         color: COLORS.textSecondary,
+        fontWeight: FONTS.weight.medium,
+        letterSpacing: 0.2,
     },
-    actionItem: {
+
+    // Actions Container
+    actionsContainer: {
+        gap: SPACING.md,
+    },
+    actionCard: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: COLORS.surface,
-        padding: SPACING.md,
+        padding: SPACING.md + 2,
         borderRadius: BORDER_RADIUS.lg,
-        marginBottom: SPACING.md,
         borderWidth: 1,
-        borderColor: COLORS.surfaceVariant,
+        borderColor: COLORS.border,
     },
     actionIconContainer: {
         width: 48,
@@ -272,12 +328,15 @@ const styles = StyleSheet.create({
     },
     actionTitle: {
         fontSize: FONTS.body,
-        fontWeight: '600',
+        fontWeight: FONTS.weight.semibold,
         color: COLORS.textPrimary,
+        marginBottom: SPACING.xs - 2,
+        letterSpacing: -0.2,
     },
     actionSubtitle: {
         fontSize: FONTS.caption,
         color: COLORS.textSecondary,
+        lineHeight: FONTS.caption * 1.4,
     },
 });
 

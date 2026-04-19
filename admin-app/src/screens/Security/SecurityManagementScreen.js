@@ -14,11 +14,13 @@ import {
     Platform,
     ScrollView
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { COLORS, SPACING, FONTS, SHADOWS, BORDER_RADIUS } from '../../styles/theme';
 import { Ionicons } from '@expo/vector-icons';
 import api, { endpoints } from '../../api/axiosConfig';
 
-const SecurityManagementScreen = () => {
+const SecurityManagementScreen = ({ navigation }) => {
     const [guards, setGuards] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -74,9 +76,15 @@ const SecurityManagementScreen = () => {
     };
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['top']}>
+            <StatusBar style="dark" />
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Security Management</Text>
+                <View style={styles.headerLeft}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                        <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Security Management</Text>
+                </View>
                 <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
                     <Ionicons name="add" size={24} color={COLORS.white} />
                 </TouchableOpacity>
@@ -193,7 +201,7 @@ const SecurityManagementScreen = () => {
                     </View>
                 </KeyboardAvoidingView>
             </Modal>
-        </View>
+        </SafeAreaView>
     );
 };
 
@@ -206,11 +214,20 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingTop: 60,
-        paddingBottom: SPACING.md,
+        paddingVertical: SPACING.md,
         paddingHorizontal: SPACING.lg,
         backgroundColor: COLORS.white,
-        ...SHADOWS.small,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+    },
+    headerLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    backButton: {
+        padding: SPACING.xs,
+        marginRight: SPACING.sm,
+        marginLeft: -SPACING.xs,
     },
     headerTitle: {
         fontSize: FONTS.h4,

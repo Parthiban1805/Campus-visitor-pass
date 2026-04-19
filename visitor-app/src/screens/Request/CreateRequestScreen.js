@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import CustomInput from '../../components/CustomInput';
 import CustomButton from '../../components/CustomButton';
 import api, { endpoints } from '../../api/axiosConfig';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../../styles/theme';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS, DIMENSIONS, ICON_SIZES } from '../../styles/theme';
 
 const DEPARTMENTS = [
     'Computer Science',
@@ -53,7 +53,6 @@ const CreateRequestScreen = ({ navigation }) => {
     const [showDepartmentPicker, setShowDepartmentPicker] = useState(false);
     const [showTimeSlotPicker, setShowTimeSlotPicker] = useState(false);
 
-    // ... validation logic (keep same) ...
     const validateForm = () => {
         const newErrors = {};
 
@@ -66,17 +65,17 @@ const CreateRequestScreen = ({ navigation }) => {
         }
 
         if (!formData.personToMeet.name.trim()) {
-            newErrors.personName = 'Person to meet name is required';
+            newErrors.personName = 'Person name is required';
         }
 
         if (!formData.visitDate.trim()) {
-            newErrors.visitDate = 'Visit date is required (YYYY-MM-DD format)';
+            newErrors.visitDate = 'Date is required (YYYY-MM-DD)';
         } else {
             const date = new Date(formData.visitDate);
             if (isNaN(date.getTime())) {
                 newErrors.visitDate = 'Invalid date format';
             } else if (date < new Date().setHours(0, 0, 0, 0)) {
-                newErrors.visitDate = 'Visit date cannot be in the past';
+                newErrors.visitDate = 'Date cannot be in the past';
             }
         }
 
@@ -97,19 +96,19 @@ const CreateRequestScreen = ({ navigation }) => {
 
             if (response.data.success) {
                 Alert.alert(
-                    'Success',
-                    'Visit request submitted successfully! You will receive an email notification.',
+                    'Request Submitted',
+                    'Your visit request has been submitted successfully. You will be notified once it is approved.',
                     [
                         {
-                            text: 'OK',
-                            onPress: () => navigation.navigate('Requests'),
+                            text: 'Back to Home',
+                            onPress: () => navigation.navigate('Home'),
                         },
                     ]
                 );
             }
         } catch (error) {
             const message = error.response?.data?.message || 'Failed to submit request';
-            Alert.alert('Error', message);
+            Alert.alert('Submission Error', message);
         } finally {
             setLoading(false);
         }
@@ -127,26 +126,94 @@ const CreateRequestScreen = ({ navigation }) => {
             ...formData,
             personToMeet: { ...formData.personToMeet, [field]: value },
         });
-        if (errors[`person${field.charAt(0).toUpperCase() + field.slice(1)}`]) {
-            setErrors({
-                ...errors,
-                [`person${field.charAt(0).toUpperCase() + field.slice(1)}`]: null,
-            });
+        const errorKey = `person${field.charAt(0).toUpperCase() + field.slice(1)}`;
+        if (errors[errorKey]) {
+            setErrors({ ...errors, [errorKey]: null });
         }
     };
 
+    // Helper component for stylized pickers
+    const PickerInput = ({ label, value, placeholder, isOpen, onToggle, options, onSelect, icon, error }) => (
+        <View style={styles.pickerContainer}>
+            <Text style={styles.inputLabel}>{label}</Text>
+            <TouchableOpacity
+                style={[
+                    styles.pickerButton,
+                    isOpen && styles.pickerButtonActive,
+                    error && styles.pickerButtonError,
+                ]}
+                onPress={onToggle}
+                activeOpacity={0.7}
+            >
+                <View style={styles.pickerContent}>
+                    <Ionicons
+                        name={icon}
+                        size={ICON_SIZES.sm}
+                        color={value ? COLORS.textPrimary : COLORS.textTertiary}
+                        style={styles.pickerIcon}
+                    />
+                    <Text style={[
+                        styles.pickerValue,
+                        !value && styles.pickerPlaceholder
+                    ]}>
+                        {value || placeholder}
+                    </Text>
+                </View>
+                <Ionicons
+                    name={isOpen ? 'chevron-up' : 'chevron-down'}
+                    size={ICON_SIZES.sm}
+                    color={COLORS.textSecondary}
+                />
+            </TouchableOpacity>
+
+            {isOpen && (
+                <View style={[styles.dropdownContainer, SHADOWS.md]}>
+                    {options.map((option, index) => (
+                        <TouchableOpacity
+                            key={index}
+                            style={[
+                                styles.dropdownItem,
+                                value === option && styles.dropdownItemSelected,
+                                index === options.length - 1 && styles.dropdownItemLast
+                            ]}
+                            onPress={() => onSelect(option)}
+                        >
+                            <Text style={[
+                                styles.dropdownItemText,
+                                value === option && styles.dropdownItemTextSelected
+                            ]}>
+                                {option}
+                            </Text>
+                            {value === option && (
+                                <Ionicons name="checkmark" size={ICON_SIZES.sm} color={COLORS.primary} />
+                            )}
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            )}
+
+            {error && (
+                <View style={styles.errorContainer}>
+                    <Ionicons name="alert-circle" size={ICON_SIZES.xs} color={COLORS.error} />
+                    <Text style={styles.errorText}>{error}</Text>
+                </View>
+            )}
+        </View>
+    );
+
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['top']}>
             <StatusBar style="dark" />
+
             <View style={styles.header}>
                 <TouchableOpacity
                     onPress={() => navigation.goBack()}
                     style={styles.backButton}
                 >
-                    <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
+                    <Ionicons name="arrow-back" size={ICON_SIZES.md} color={COLORS.textPrimary} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>New Visit Request</Text>
-                <View style={{ width: 40 }} />
+                <View style={styles.headerPlaceholder} />
             </View>
 
             <KeyboardAvoidingView
@@ -158,72 +225,51 @@ const CreateRequestScreen = ({ navigation }) => {
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={styles.scrollContent}
                 >
-                    <View style={styles.form}>
-                        <Text style={styles.sectionTitle}>Visit Details</Text>
-
+                    <View style={[styles.section, { zIndex: 3 }]}>
+                        <Text style={styles.sectionHeader}>Visit Details</Text>
                         <CustomInput
-                            placeholder="Purpose of Visit"
+                            label="Purpose of Visit"
+                            placeholder="e.g., Guest Lecture, Meeting, Interview"
                             value={formData.purpose}
                             onChangeText={(value) => updateField('purpose', value)}
-                            multiline
-                            numberOfLines={3}
                             icon="document-text-outline"
                             error={errors.purpose}
                         />
 
-                        <TouchableOpacity
-                            style={[styles.pickerButton, errors.department && styles.pickerError]}
-                            onPress={() => setShowDepartmentPicker(!showDepartmentPicker)}
-                            activeOpacity={0.7}
-                        >
-                            <View style={styles.pickerIcon}>
-                                <Ionicons name="business-outline" size={20} color={COLORS.primary} />
-                            </View>
-                            <Text
-                                style={[
-                                    styles.pickerText,
-                                    !formData.department && styles.placeholderText,
-                                ]}
-                            >
-                                {formData.department || 'Select Department'}
-                            </Text>
-                            <Ionicons
-                                name={showDepartmentPicker ? 'chevron-up' : 'chevron-down'}
-                                size={20}
-                                color={COLORS.textSecondary}
-                            />
-                        </TouchableOpacity>
-
-                        {showDepartmentPicker && (
-                            <View style={styles.pickerOptions}>
-                                {DEPARTMENTS.map((dept) => (
-                                    <TouchableOpacity
-                                        key={dept}
-                                        style={styles.pickerOption}
-                                        onPress={() => {
-                                            updateField('department', dept);
-                                            setShowDepartmentPicker(false);
-                                        }}
-                                    >
-                                        <Text style={[styles.pickerOptionText, formData.department === dept && styles.selectedOptionText]}>{dept}</Text>
-                                        {formData.department === dept && (
-                                            <Ionicons name="checkmark" size={20} color={COLORS.primary} />
-                                        )}
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        )}
-                        {errors.department && (
-                            <Text style={styles.errorText}>{errors.department}</Text>
-                        )}
-
-
-                        <Text style={[styles.sectionTitle, { marginTop: SPACING.lg }]}>
-                            Person to Meet
-                        </Text>
+                        <PickerInput
+                            label="Department"
+                            value={formData.department}
+                            placeholder="Select Department"
+                            isOpen={showDepartmentPicker}
+                            onToggle={() => {
+                                setShowDepartmentPicker(!showDepartmentPicker);
+                                setShowTimeSlotPicker(false);
+                            }}
+                            options={DEPARTMENTS}
+                            onSelect={(value) => {
+                                updateField('department', value);
+                                setShowDepartmentPicker(false);
+                            }}
+                            icon="business-outline"
+                            error={errors.department}
+                        />
 
                         <CustomInput
-                            placeholder="Name"
+                            label="Additional Notes (Optional)"
+                            placeholder="Any special requirements..."
+                            value={formData.additionalNotes}
+                            onChangeText={(value) => updateField('additionalNotes', value)}
+                            multiline
+                            numberOfLines={3}
+                            icon="chatbox-outline"
+                        />
+                    </View>
+
+                    <View style={[styles.section, { zIndex: 2 }]}>
+                        <Text style={styles.sectionHeader}>Person to Meet</Text>
+                        <CustomInput
+                            label="Name"
+                            placeholder="Full Name"
                             value={formData.personToMeet.name}
                             onChangeText={(value) => updatePersonField('name', value)}
                             icon="person-outline"
@@ -232,7 +278,8 @@ const CreateRequestScreen = ({ navigation }) => {
                         />
 
                         <CustomInput
-                            placeholder="Designation (Optional)"
+                            label="Designation (Optional)"
+                            placeholder="e.g., HOD, Professor"
                             value={formData.personToMeet.designation}
                             onChangeText={(value) => updatePersonField('designation', value)}
                             icon="briefcase-outline"
@@ -240,87 +287,53 @@ const CreateRequestScreen = ({ navigation }) => {
                         />
 
                         <CustomInput
-                            placeholder="Contact Number (Optional)"
+                            label="Contact Number (Optional)"
+                            placeholder="Mobile Number"
                             value={formData.personToMeet.contact}
                             onChangeText={(value) => updatePersonField('contact', value)}
                             icon="call-outline"
                             keyboardType="phone-pad"
                         />
+                    </View>
 
-                        <Text style={[styles.sectionTitle, { marginTop: SPACING.lg }]}>
-                            Schedule
-                        </Text>
-
+                    <View style={[styles.section, { zIndex: 1 }]}>
+                        <Text style={styles.sectionHeader}>Schedule</Text>
                         <CustomInput
-                            placeholder="Visit Date (YYYY-MM-DD)"
+                            label="Date of Visit"
+                            placeholder="YYYY-MM-DD"
                             value={formData.visitDate}
                             onChangeText={(value) => updateField('visitDate', value)}
                             icon="calendar-outline"
                             error={errors.visitDate}
                         />
 
-                        <TouchableOpacity
-                            style={[styles.pickerButton, errors.timeSlot && styles.pickerError]}
-                            onPress={() => setShowTimeSlotPicker(!showTimeSlotPicker)}
-                            activeOpacity={0.7}
-                        >
-                            <View style={styles.pickerIcon}>
-                                <Ionicons name="time-outline" size={20} color={COLORS.primary} />
-                            </View>
-                            <Text
-                                style={[
-                                    styles.pickerText,
-                                    !formData.timeSlot && styles.placeholderText,
-                                ]}
-                            >
-                                {formData.timeSlot || 'Select Time Slot'}
-                            </Text>
-                            <Ionicons
-                                name={showTimeSlotPicker ? 'chevron-up' : 'chevron-down'}
-                                size={20}
-                                color={COLORS.textSecondary}
-                            />
-                        </TouchableOpacity>
-
-                        {showTimeSlotPicker && (
-                            <View style={styles.pickerOptions}>
-                                {TIME_SLOTS.map((slot) => (
-                                    <TouchableOpacity
-                                        key={slot}
-                                        style={styles.pickerOption}
-                                        onPress={() => {
-                                            updateField('timeSlot', slot);
-                                            setShowTimeSlotPicker(false);
-                                        }}
-                                    >
-                                        <Text style={[styles.pickerOptionText, formData.timeSlot === slot && styles.selectedOptionText]}>{slot}</Text>
-                                        {formData.timeSlot === slot && (
-                                            <Ionicons name="checkmark" size={20} color={COLORS.primary} />
-                                        )}
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        )}
-                        {errors.timeSlot && (
-                            <Text style={styles.errorText}>{errors.timeSlot}</Text>
-                        )}
-
-
-                        <CustomInput
-                            placeholder="Additional Notes (Optional)"
-                            value={formData.additionalNotes}
-                            onChangeText={(value) => updateField('additionalNotes', value)}
-                            multiline
-                            numberOfLines={3}
-                            icon="chatbox-outline"
-                            style={{ marginTop: SPACING.md }}
+                        <PickerInput
+                            label="Time Slot"
+                            value={formData.timeSlot}
+                            placeholder="Select Time Slot"
+                            isOpen={showTimeSlotPicker}
+                            onToggle={() => {
+                                setShowTimeSlotPicker(!showTimeSlotPicker);
+                                setShowDepartmentPicker(false);
+                            }}
+                            options={TIME_SLOTS}
+                            onSelect={(value) => {
+                                updateField('timeSlot', value);
+                                setShowTimeSlotPicker(false);
+                            }}
+                            icon="time-outline"
+                            error={errors.timeSlot}
                         />
+                    </View>
 
+                    <View style={styles.footer}>
                         <CustomButton
                             title="Submit Request"
                             onPress={handleSubmit}
                             loading={loading}
-                            style={styles.submitButton}
+                            size="large"
+                            icon={<Ionicons name="send" size={ICON_SIZES.sm} color={COLORS.white} />}
+                            iconPosition="right"
                         />
                     </View>
                 </ScrollView>
@@ -340,68 +353,104 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingVertical: SPACING.md,
         paddingHorizontal: SPACING.lg,
-        backgroundColor: COLORS.background,
+        backgroundColor: COLORS.surface,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
     },
     backButton: {
-        padding: SPACING.sm,
-        marginLeft: -SPACING.sm,
+        padding: SPACING.xs,
+        marginLeft: -SPACING.xs,
+        borderRadius: BORDER_RADIUS.round,
     },
     headerTitle: {
         fontSize: FONTS.h4,
-        fontWeight: '700',
+        fontWeight: FONTS.weight.bold,
         color: COLORS.textPrimary,
+        letterSpacing: -0.2,
+    },
+    headerPlaceholder: {
+        width: 40,
     },
     content: {
         flex: 1,
     },
     scrollContent: {
-        paddingBottom: SPACING.xxl,
-    },
-    form: {
         padding: SPACING.lg,
+        paddingBottom: SPACING.xxl * 2,
     },
-    sectionTitle: {
+    section: {
+        marginBottom: SPACING.xl,
+    },
+    sectionHeader: {
         fontSize: FONTS.h5,
-        fontWeight: '700',
+        fontWeight: FONTS.weight.bold,
         color: COLORS.textPrimary,
         marginBottom: SPACING.md,
+        marginLeft: SPACING.xs,
+    },
+    footer: {
+        marginTop: SPACING.sm,
+    },
+
+    // Picker Styles
+    pickerContainer: {
+        marginBottom: SPACING.md,
+        zIndex: 10, // Ensure dropdowns appear above other elements
+    },
+    inputLabel: {
+        fontSize: FONTS.caption,
+        fontWeight: FONTS.weight.medium,
+        color: COLORS.textSecondary,
+        marginBottom: SPACING.xs,
+        marginLeft: SPACING.xs,
     },
     pickerButton: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'space-between',
         backgroundColor: COLORS.surface,
-        borderRadius: BORDER_RADIUS.md,
+        borderRadius: BORDER_RADIUS.lg,
         borderWidth: 1,
         borderColor: COLORS.border,
         paddingHorizontal: SPACING.md,
-        minHeight: 56, // Match CustomInput height usually
-        marginBottom: SPACING.md,
+        height: DIMENSIONS.inputHeight,
+    },
+    pickerButtonActive: {
+        borderColor: COLORS.primary,
+        borderWidth: 1.5,
+    },
+    pickerButtonError: {
+        borderColor: COLORS.error,
+        backgroundColor: COLORS.errorAlpha10,
+    },
+    pickerContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     pickerIcon: {
         marginRight: SPACING.sm,
     },
-    pickerError: {
-        borderColor: COLORS.error,
-    },
-    pickerText: {
-        flex: 1,
+    pickerValue: {
         fontSize: FONTS.body,
         color: COLORS.textPrimary,
     },
-    placeholderText: {
-        color: COLORS.textHint,
+    pickerPlaceholder: {
+        color: COLORS.textTertiary,
     },
-    pickerOptions: {
+    dropdownContainer: {
+        position: 'absolute',
+        top: '100%',
+        left: 0,
+        right: 0,
+        marginTop: 4,
         backgroundColor: COLORS.surface,
         borderRadius: BORDER_RADIUS.md,
-        marginBottom: SPACING.md,
         borderWidth: 1,
         borderColor: COLORS.border,
-        overflow: 'hidden',
+        zIndex: 1000,
+        elevation: 5,
     },
-    pickerOption: {
+    dropdownItem: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -409,23 +458,30 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
     },
-    pickerOptionText: {
+    dropdownItemLast: {
+        borderBottomWidth: 0,
+    },
+    dropdownItemSelected: {
+        backgroundColor: COLORS.primaryAlpha10,
+    },
+    dropdownItemText: {
         fontSize: FONTS.body,
         color: COLORS.textPrimary,
     },
-    selectedOptionText: {
+    dropdownItemTextSelected: {
         color: COLORS.primary,
-        fontWeight: '600',
+        fontWeight: FONTS.weight.semibold,
+    },
+    errorContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: SPACING.xs,
+        paddingLeft: SPACING.xs,
     },
     errorText: {
         color: COLORS.error,
-        fontSize: FONTS.small,
-        marginTop: -SPACING.sm,
-        marginBottom: SPACING.md,
+        fontSize: FONTS.caption,
         marginLeft: SPACING.xs,
-    },
-    submitButton: {
-        marginTop: SPACING.xl,
     },
 });
 

@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import Visitor from '../models/Visitor.js';
 import Admin from '../models/Admin.js';
 import Security from '../models/Security.js';
@@ -8,13 +10,15 @@ import Settings from '../models/Settings.js';
 import connectDB from '../config/db.js';
 
 // Load environment variables
-dotenv.config();
-
-// Connect to database
-connectDB();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const seedData = async () => {
     try {
+        // Connect to database
+        await connectDB();
+
         console.log('🌱 Starting data seeding...\n');
 
         // Clear existing data

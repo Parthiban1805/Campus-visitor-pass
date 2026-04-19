@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../../styles/theme';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS, ICON_SIZES } from '../../styles/theme';
 
 const SecurityDashboardScreen = ({ navigation }) => {
     const { user, logout } = useAuth();
@@ -13,62 +13,74 @@ const SecurityDashboardScreen = ({ navigation }) => {
         <SafeAreaView style={styles.container}>
             <StatusBar style="dark" />
 
+            {/* Header */}
             <View style={styles.header}>
                 <View>
-                    <Text style={styles.greeting}>Security Gate</Text>
-                    <Text style={styles.userName}>{user?.name}</Text>
-                    {user?.gate && (
-                        <Text style={styles.gateText}>Gate: {user.gate}</Text>
-                    )}
+                    <Text style={styles.greeting}>WELCOME BACK</Text>
+                    <Text style={styles.userName}>{user?.name || 'Security Officer'}</Text>
+                    <View style={styles.gateBadge}>
+                        <Ionicons name="location-sharp" size={12} color={COLORS.primary} />
+                        <Text style={styles.gateText}>{user?.gate || 'Main Gate'}</Text>
+                    </View>
                 </View>
-                <TouchableOpacity onPress={logout} style={styles.iconButton}>
-                    <Ionicons name="log-out-outline" size={24} color={COLORS.textSecondary} />
+                <TouchableOpacity onPress={logout} style={styles.logoutButton}>
+                    <Ionicons name="log-out-outline" size={ICON_SIZES.md} color={COLORS.error} />
                 </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.content}>
+            <ScrollView
+                style={styles.content}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
+                {/* Main Action - Scan */}
                 <TouchableOpacity
-                    style={styles.scanCard}
+                    style={[styles.scanCard, SHADOWS.lg]}
                     onPress={() => navigation.navigate('Scanner')}
                     activeOpacity={0.9}
                 >
-                    <View style={styles.scanIconContainer}>
-                        <Ionicons name="qr-code-outline" size={48} color={COLORS.white} />
-                    </View>
                     <View style={styles.scanContent}>
-                        <Text style={styles.scanTitle}>Scan QR Code</Text>
-                        <Text style={styles.scanSubtitle}>Verify visitor entry/exit</Text>
+                        <View style={styles.scanTag}>
+                            <Text style={styles.scanTagText}>QUICK ACTION</Text>
+                        </View>
+                        <Text style={styles.scanTitle}>Scan Entry Pass</Text>
+                        <Text style={styles.scanSubtitle}>
+                            Verify visitor QR codes for check-in/out
+                        </Text>
                     </View>
-                    <Ionicons name="camera" size={28} color={COLORS.white} style={{ opacity: 0.8 }} />
+                    <View style={styles.scanIconWrapper}>
+                        <Ionicons name="qr-code" size={48} color={COLORS.primary} />
+                    </View>
                 </TouchableOpacity>
 
+                {/* Quick Stats / Navigation Grid */}
+                <Text style={styles.sectionTitle}>Overview</Text>
                 <View style={styles.grid}>
                     <DashboardCard
-                        icon="time-outline"
-                        title="History"
-                        subtitle="Recent scans"
-                        color={COLORS.primary}
-                        onPress={() => navigation.navigate('History')}
-                    />
-                    <DashboardCard
-                        icon="people-outline"
-                        title="Visitors"
-                        subtitle="Active on campus"
+                        icon="people"
+                        title="Active Visitors"
+                        subtitle="Currently on campus"
                         color={COLORS.info}
                         onPress={() => navigation.navigate('ActiveVisitors')}
                     />
+                    <DashboardCard
+                        icon="time"
+                        title="Visit History"
+                        subtitle="Past entry logs"
+                        color={COLORS.secondary}
+                        onPress={() => navigation.navigate('History')}
+                    />
                 </View>
 
+                {/* Instructions / Status */}
                 <View style={[styles.infoCard, SHADOWS.card]}>
                     <View style={styles.infoHeader}>
-                        <Ionicons name="information-circle-outline" size={24} color={COLORS.primary} />
-                        <Text style={styles.infoTitle}>Quick Guide</Text>
+                        <Ionicons name="shield-checkmark" size={ICON_SIZES.md} color={COLORS.success} />
+                        <Text style={styles.infoTitle}>System Status: Online</Text>
                     </View>
-                    <View style={styles.infoList}>
-                        <InfoItem text="Tap 'Scan QR Code' to open camera" />
-                        <InfoItem text="Align QR code within the frame" />
-                        <InfoItem text="Confirm details before allowing entry" />
-                    </View>
+                    <Text style={styles.infoDesc}>
+                        Syncing with central server. All access control lists are up to date.
+                    </Text>
                 </View>
             </ScrollView>
         </SafeAreaView>
@@ -81,19 +93,17 @@ const DashboardCard = ({ icon, title, subtitle, color, onPress }) => (
         onPress={onPress}
         activeOpacity={0.8}
     >
-        <View style={[styles.cardIcon, { backgroundColor: color + '15' }]}>
-            <Ionicons name={icon} size={28} color={color} />
+        <View style={[styles.cardIcon, { backgroundColor: `${color}15` }]}>
+            <Ionicons name={icon} size={ICON_SIZES.lg} color={color} />
         </View>
-        <Text style={styles.cardTitle}>{title}</Text>
-        <Text style={styles.cardSubtitle}>{subtitle}</Text>
+        <View style={styles.cardTextContainer}>
+            <Text style={styles.cardTitle}>{title}</Text>
+            <Text style={styles.cardSubtitle}>{subtitle}</Text>
+        </View>
+        <View style={styles.cardArrow}>
+            <Ionicons name="chevron-forward" size={ICON_SIZES.sm} color={COLORS.textTertiary} />
+        </View>
     </TouchableOpacity>
-);
-
-const InfoItem = ({ text }) => (
-    <View style={styles.infoItem}>
-        <View style={styles.bullet} />
-        <Text style={styles.infoText}>{text}</Text>
-    </View>
 );
 
 const styles = StyleSheet.create({
@@ -106,134 +116,167 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: SPACING.lg,
-        paddingVertical: SPACING.md,
-        backgroundColor: COLORS.background,
+        paddingTop: SPACING.md,
+        paddingBottom: SPACING.lg,
+        backgroundColor: COLORS.surface,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
     },
     greeting: {
-        fontSize: FONTS.caption,
+        fontSize: FONTS.tiny,
         color: COLORS.textSecondary,
-        textTransform: 'uppercase',
+        fontWeight: 'bold',
         letterSpacing: 1,
+        marginBottom: 2,
     },
     userName: {
-        fontSize: FONTS.h2,
-        fontWeight: '700',
+        fontSize: FONTS.h4,
+        fontWeight: FONTS.weight.bold,
         color: COLORS.textPrimary,
-        includeFontPadding: false,
     },
-    gateText: {
-        fontSize: FONTS.body,
-        color: COLORS.textSecondary,
+    gateBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: COLORS.primaryAlpha10,
+        paddingHorizontal: SPACING.sm,
+        paddingVertical: 2,
+        borderRadius: BORDER_RADIUS.pill,
+        alignSelf: 'flex-start',
         marginTop: SPACING.xs,
     },
-    iconButton: {
+    gateText: {
+        fontSize: FONTS.small,
+        color: COLORS.primary,
+        fontWeight: '600',
+        marginLeft: 4,
+    },
+    logoutButton: {
         padding: SPACING.sm,
-        backgroundColor: COLORS.surface,
+        backgroundColor: COLORS.errorAlpha10,
         borderRadius: BORDER_RADIUS.round,
-        ...SHADOWS.light,
     },
     content: {
         flex: 1,
+    },
+    scrollContent: {
         padding: SPACING.lg,
     },
+    // Scan Card
     scanCard: {
-        backgroundColor: COLORS.primary,
+        backgroundColor: COLORS.surface,
         borderRadius: BORDER_RADIUS.xl,
         padding: SPACING.lg,
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'space-between',
         marginBottom: SPACING.xl,
-        ...SHADOWS.medium,
-    },
-    scanIconContainer: {
-        width: 64,
-        height: 64,
-        backgroundColor: 'rgba(255,255,255,0.15)',
-        borderRadius: BORDER_RADIUS.lg,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: SPACING.md,
+        borderWidth: 1,
+        borderColor: COLORS.primaryAlpha20,
+        overflow: 'hidden',
     },
     scanContent: {
         flex: 1,
+        marginRight: SPACING.md,
+    },
+    scanTag: {
+        backgroundColor: COLORS.primary,
+        paddingHorizontal: SPACING.sm,
+        paddingVertical: 2,
+        borderRadius: BORDER_RADIUS.sm,
+        alignSelf: 'flex-start',
+        marginBottom: SPACING.sm,
+    },
+    scanTagText: {
+        color: COLORS.white,
+        fontSize: 10,
+        fontWeight: 'bold',
     },
     scanTitle: {
-        fontSize: FONTS.h4,
-        fontWeight: '700',
-        color: COLORS.white,
+        fontSize: FONTS.h3,
+        fontWeight: FONTS.weight.bold,
+        color: COLORS.textPrimary,
+        marginBottom: SPACING.xs,
     },
     scanSubtitle: {
         fontSize: FONTS.body,
-        color: 'rgba(255,255,255,0.8)',
+        color: COLORS.textSecondary,
+        lineHeight: 20,
+    },
+    scanIconWrapper: {
+        width: 80,
+        height: 80,
+        borderRadius: BORDER_RADIUS.round,
+        backgroundColor: COLORS.primaryAlpha10,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    // Grid
+    sectionTitle: {
+        fontSize: FONTS.h5,
+        fontWeight: FONTS.weight.bold,
+        color: COLORS.textPrimary,
+        marginBottom: SPACING.md,
     },
     grid: {
-        flexDirection: 'row',
         gap: SPACING.md,
         marginBottom: SPACING.xl,
     },
     card: {
-        flex: 1,
-        backgroundColor: COLORS.surface,
-        borderRadius: BORDER_RADIUS.lg,
-        padding: SPACING.md,
+        flexDirection: 'row',
         alignItems: 'center',
+        backgroundColor: COLORS.surface,
+        padding: SPACING.md,
+        borderRadius: BORDER_RADIUS.lg,
         borderWidth: 1,
-        borderColor: COLORS.surfaceVariant,
+        borderColor: COLORS.border,
     },
     cardIcon: {
-        width: 56,
-        height: 56,
-        borderRadius: BORDER_RADIUS.round,
+        width: 50,
+        height: 50,
+        borderRadius: BORDER_RADIUS.md,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: SPACING.sm,
+        marginRight: SPACING.md,
+    },
+    cardTextContainer: {
+        flex: 1,
     },
     cardTitle: {
-        fontSize: FONTS.h5,
-        fontWeight: '600',
+        fontSize: FONTS.h6,
+        fontWeight: FONTS.weight.semibold,
         color: COLORS.textPrimary,
-        marginBottom: SPACING.xs,
+        marginBottom: 2,
     },
     cardSubtitle: {
-        fontSize: FONTS.small,
+        fontSize: FONTS.caption,
         color: COLORS.textSecondary,
-        textAlign: 'center',
     },
+    cardArrow: {
+        marginLeft: SPACING.sm,
+    },
+    // Info Card
     infoCard: {
         backgroundColor: COLORS.surface,
         borderRadius: BORDER_RADIUS.lg,
         padding: SPACING.lg,
         borderWidth: 1,
-        borderColor: COLORS.surfaceVariant,
+        borderColor: COLORS.successAlpha10,
     },
     infoHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: SPACING.md,
+        marginBottom: SPACING.sm,
     },
     infoTitle: {
-        fontSize: FONTS.h5,
-        fontWeight: '600',
-        color: COLORS.textPrimary,
+        fontSize: FONTS.body,
+        fontWeight: FONTS.weight.semibold,
+        color: COLORS.success,
         marginLeft: SPACING.sm,
     },
-    infoList: {
-        gap: SPACING.sm,
-    },
-    infoItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    bullet: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        backgroundColor: COLORS.primary,
-        marginRight: SPACING.sm,
-    },
-    infoText: {
-        fontSize: FONTS.body,
+    infoDesc: {
+        fontSize: FONTS.caption,
         color: COLORS.textSecondary,
+        lineHeight: 20,
     },
 });
 
